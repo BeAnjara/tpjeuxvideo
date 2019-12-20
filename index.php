@@ -22,16 +22,42 @@
 		<div class="form-group">
 			Possesseur: <input type="text" name="possesseur" id="possesseur" class="form-control">
 		</div>
+
+		<div class="form-group">
+			<p> Trier les jeux par prix par ordre croissant ou decroissant: <br></p>
+			<div class="form-check-inline">
+				<label class="form-check-label">
+					<input type="radio" class="form-check-input" name="triage" value="croissant"> Croissant
+				</label>
+			</div>
+			<div class="form-check-inline">
+				<label class="form-check-label">
+					<input type="radio" class="form-check-input" name="triage" value="decroissant"> Decroissant
+				</label>
+			</div>
+		</div>
 		
 	<button type="submit" class="btn btn-primary" name="submit">Submit</button>		
 	</form>
 
 <? if(isset($_POST['submit'])):?>
+	
 	<? if (isset($_POST['possesseur']) && !empty($_POST['possesseur'])): ?>
-			<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur') ?>
+			
+			<? if(isset($_POST['triage']) && ($_POST['triage'] == 'croissant')):?>
+				<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur ORDER BY prix') ?>			
+			<? elseif(isset($_POST['triage']) && ($_POST['triage'] == 'decroissant')):?>
+				<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur ORDER BY prix DESC') ?>
+			<? else: ?>
+				<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur') ?>
+			<? endif;?>
+
 			<? $search->execute(array('possesseur' => $_POST['possesseur'])) ?>
+			
 			<? $exist = false ?>
-			<table class="table">
+			
+			<? if ($search->fetch()): ?>
+				<table class="table">
 				<thead>
 					<tr>
 						<th>Nom Jeux</th>
@@ -41,7 +67,12 @@
 						<th>Nombre Joueur max</th>
 					</tr>
 				</thead>
-				<tbody>	
+				<tbody>
+			<? else: ?> 
+				<div class="alert alert-danger">
+					<?php echo "Le nom ". $_POST['possesseur'] . " n'existe pas dans la base"; ?>
+				</div>
+			<? endif;?>	
 			<? while($result = $search->fetch()):?>
 				<? $exist = true ?>
 
@@ -54,19 +85,14 @@
 				</tr>
 			<? endwhile; ?>
 
-			<? if ( $exist == false):?>
-				<div class="alert alert-danger">
-					<?php echo "Le nom ". $_POST['possesseur'] . " n'existe pas dans la base"; ?>
-				</div>
-			<? endif;?>
 
 				</tbody>
 			</table>
+	<? $search->closeCursor(); ?>
 	<? else: ?>
 		<div class="alert alert-danger">
 					<?php echo "Veuillez entrer un nom"; ?>
-				</div>
-	<? $search->closeCursor(); ?>
+		</div>
 	<? endif;?>		
 <? endif;?>
 </div>
