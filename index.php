@@ -1,101 +1,57 @@
+
 <?php 
-	try 
-	{
-		$db = new PDO ('mysql:host=localhost;dbname=videogame', 'root', '', array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
-	} 
-	catch (Exception $e)
-	{
-		die('Erreur : '.$e->getMessage());
-	}
+	include "connect_to_db.php";
+	include "view/header.php";
+	session_start(); 
+?>
+
+<a href="search_view.php"> Chercher un possesseur de jeu </a> <br>
+<a href="create_view.php"> Créer un possesseur de jeu</a>
+<?php 
+	if($_SESSION && $_SESSION['Update']):
+		echo "<p class=\"alert alert-success\">". $_SESSION['Update'] . "</p>";
+	endif;
+
+	session_unset();
+	session_destroy();
  ?>
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Jeu vidéo</title>
-	<meta charset="utf-8">
-	<link rel="stylesheet" href="css/bootstrap.min.css">
-</head>
-<body>
 
-<div class="container">
-	<form action="./index.php" method="POST">
-		<div class="form-group">
-			Possesseur: <input type="text" name="possesseur" id="possesseur" class="form-control">
-		</div>
+<?php 
+	$req = $db->query('SELECT * FROM jeux_video');
+	$alldata = $req->fetchAll(PDO::FETCH_ASSOC);
+ ?>
 
-		<div class="form-group">
-			<p> Trier les jeux par prix par ordre croissant ou decroissant: <br></p>
-			<div class="form-check-inline">
-				<label class="form-check-label">
-					<input type="radio" class="form-check-input" name="triage" value="croissant"> Croissant
-				</label>
-			</div>
-			<div class="form-check-inline">
-				<label class="form-check-label">
-					<input type="radio" class="form-check-input" name="triage" value="decroissant"> Decroissant
-				</label>
-			</div>
-		</div>
-		
-	<button type="submit" class="btn btn-primary" name="submit">Submit</button>		
-	</form>
-
-<? if(isset($_POST['submit'])):?>
-	
-	<? if (isset($_POST['possesseur']) && !empty($_POST['possesseur'])): ?>
-			
-			<? if(isset($_POST['triage']) && ($_POST['triage'] == 'croissant')):?>
-				<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur ORDER BY prix') ?>			
-			<? elseif(isset($_POST['triage']) && ($_POST['triage'] == 'decroissant')):?>
-				<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur ORDER BY prix DESC') ?>
-			<? else: ?>
-				<? $search = $db->prepare('SELECT * FROM jeux_video WHERE possesseur = :possesseur') ?>
-			<? endif;?>
-
-			<? $search->execute(array('possesseur' => $_POST['possesseur'])) ?>
-			
-			<? $exist = false ?>
-			
-			<? if ($search->fetch()): ?>
-				<table class="table">
-				<thead>
-					<tr>
-						<th>Nom Jeux</th>
-						<th>possesseur</th>
-						<th>console</th>
-						<th>prix</th>
-						<th>Nombre Joueur max</th>
-					</tr>
-				</thead>
-				<tbody>
-			<? else: ?> 
-				<div class="alert alert-danger">
-					<?php echo "Le nom ". $_POST['possesseur'] . " n'existe pas dans la base"; ?>
+ <table class="table">
+	<thead>
+		<tr>
+			<th>Nom Jeux</th>
+			<th>possesseur</th>
+			<th>console</th>
+			<th>prix</th>
+			<th>Nombre Joueur max</th>
+			<th>Action</th>
+		</tr>
+	</thead>
+	<tbody>
+	<? foreach($alldata as $row => $linedata): ?>
+		<tr>
+			<td> <?php echo $linedata['nom']; ?></td>
+			<td> <?php echo $linedata['possesseur']; ?></td>
+			<td> <?php echo $linedata['console']; ?></td>
+			<td> <?php echo $linedata['prix']; ?></td>
+			<td> <?php echo $linedata['nbre_joueurs_max']; ?></td>
+			<td style="padding: 5px;">
+				<div class="button-group"></div> 
+					<a href="edit.php?id_edit=<?php echo $linedata["ID"] ?>" class="btn btn-info"> Edit</a>
+					<a href="delete.php?id_delete=<?php echo $linedata["ID"] ?>" class="btn btn-danger delete" id="item_<?php echo $linedata["ID"] ?>"> Delete</a>
 				</div>
-			<? endif;?>	
-			<? while($result = $search->fetch()):?>
-				<? $exist = true ?>
+			</td>
+		</tr>
+	<?endforeach;?>
 
-				<tr>
-					<td> <?= $result['nom']; ?></td>
-					<td> <?= $result['possesseur']; ?></td>
-					<td> <?= $result['console']; ?></td>
-					<td> <?= $result['prix']; ?></td>
-					<td> <?= $result['nbre_joueurs_max']; ?></td>
-				</tr>
-			<? endwhile; ?>
-
-
-				</tbody>
-			</table>
-	<? $search->closeCursor(); ?>
-	<? else: ?>
-		<div class="alert alert-danger">
-					<?php echo "Veuillez entrer un nom"; ?>
-		</div>
-	<? endif;?>		
-<? endif;?>
-</div>
+	</tbody>
+</table>
+<?php include "view/footer.php"; ?>
 
 
 
@@ -112,11 +68,3 @@
 
 
 
-
-
-
-<script src="js/jquery-3.3.1.min.js"></script>
-<script src="js/popper.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-</body>
-</html>
